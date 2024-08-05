@@ -18,9 +18,7 @@ export class AuthService {
     if (user && passwordIsMatch) {
       return user
     }
-    
-    throw new UnauthorizedException("User or password are incorrect");
-    
+    throw new UnauthorizedException("Неправильная почта или пароль");
   } 
 
 

@@ -10,10 +10,10 @@ export class Transaction {
   @Column()
   action: string;
 
-  @Column()
+  @Column({ type: 'float'})
   amount: number;
 
-  @Column()
+  @Column({ type: 'float' })
   cashAfter: number;
 
   @ManyToOne(() => User, (user) => user.transactions)

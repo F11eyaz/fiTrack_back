@@ -65,7 +65,7 @@ export class TransactionService {
     .createQueryBuilder('transaction')
     .select('transaction.category', 'category' )
     .addSelect("SUM(-transaction.amount)", "sum")
-    .addSelect("ROUND((SUM(-transaction.amount) * 100.0 / :totalExpenses), 2)", "percentage")
+    .addSelect("ROUND(SUM(-transaction.amount) * 100.0 / :totalExpenses)", "percentage")
     .groupBy('transaction.category')
     .orderBy('sum', 'DESC')
     .where("transaction.user.id = :id AND transaction.action = '-' ", {id, totalExpenses: totalExpenses.sum})
@@ -73,6 +73,7 @@ export class TransactionService {
     .getRawMany()
 
     return totalExpensesForCategory|| 'No expenses for the category yet'
+    // здесь problema ERROR ExceptionsHandler функция round(double precision, integer) не существует - решить 
   }
   
   findForDate(
@@ -107,16 +108,16 @@ export class TransactionService {
   }
 
   async calculateFinancialStatus(id: number) {
-    // Fetch user's cash
+    
     const cash = await this.findCash(id);
   
-    // Calculate total assets for the user
+   
     const totalAssetsSum = await this.assetService.findTotalSum(id)
   
-    // Calculate total liabilities for the user
+  
     const totalLiabilitiesSum = await this.liabilityService.findTotalSum(id)
   
-    // Calculate financial status
+    
     const financialStatus = cash + (+totalAssetsSum || 0) - (+totalLiabilitiesSum || 0);
   
     return financialStatus;

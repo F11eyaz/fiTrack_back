@@ -4,6 +4,6 @@ export class AuthDto {
     @IsEmail()
     email: string
 
-    @MinLength(8, {message: "password must be more than 8 symbols"})
+    @MinLength(8, {message: "Пароль должен быть более 8 символов"})
     password: string
 }

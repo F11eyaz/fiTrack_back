@@ -24,7 +24,7 @@ export class UserService {
   })
 
   if(existUser){
-    throw new BadRequestException("This email already exist?")
+    throw new BadRequestException("Такая почта уже существует")
   }
 
   const user = await this.userRepository.save({
