@@ -1,65 +1,57 @@
-// import { Injectable } from '@nestjs/common';
-// import { CreateFamilyDto } from './dto/create-family.dto';
-// import { UpdateFamilyDto } from './dto/update-family.dto';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CreateFamilyDto } from './dto/create-family.dto';
+import { UpdateFamilyDto } from './dto/update-family.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Family } from './entities/family.entity';
+import { User } from 'src/user/entities/user.entity';
+import {Repository} from 'typeorm'
+import { error } from 'console';
 
-// import { Family } from './entities/family.entity';
-// import {Repository} from 'typeorm'
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { NotFoundException } from '@nestjs/common';
+@Injectable()
+export class FamilyService {
+  constructor(
+    @InjectRepository(Family)
+    private readonly familyRepository: Repository<Family>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
+  ){}
+  
+  async create(id: number) {
+  
+    const user = await this.userRepository.findOne({where:{id}});
 
-// @Injectable()
-// export class FamilyService {
-//   constructor(
-//     @InjectRepository(Family)
-//     private readonly familyRepository: Repository<Family>,
-//   ){}
+    const family = this.familyRepository.create({
+      users: []
+    });
 
-//   async create(createFamilyDto: CreateFamilyDto, id: number) {   
+    family.users.push(user)
 
-//     const newFamily = {
-//       title: createFamilyDto.title,
-//       user: {id,},
-//     }
-//     return await this.familyRepository.save(newFamily)
-//   }
+    await this.familyRepository.save(family);
 
-//   async findAll(id: number) {
-//     return await this.familyRepository.find({
-//       where: {
-//         user: {id}
-//       },
-//     })
-//   }
+    return family
+  }
 
-//   async findOne(id: number) {
-//     const family = await this.familyRepository.findOne({
-//       where:{id},
-      
-//     })
-//     if (!family) throw new NotFoundException("Family not found")
-//     return family;
-//   }
+  async findFamilyByToken(token: string) {
+    const family = await this.familyRepository.findOne({where:{token}})
+    return family
+  }
 
+  async connectToFamily(id: number, token: string){
+    const family = await this.familyRepository.findOne({
+      where: { token },
+      relations: ['users'], // Загружаем связанных пользователей
+    });
 
-//   async update(id: number, updateFamilyDto: UpdateFamilyDto) {
-//     const family = await this.familyRepository.findOne({
-//       where:{id},
-//     })
+    
+    if(!family){
+      throw new BadRequestException ('Такой семьи не существует')
+    }
+    const user = await this.userRepository.findOne({where:{id}});
+    family.users.push(user)
+    await this.familyRepository.save(family);
+    return family
+    
+  }
+}
 
-//     if (!family) throw new NotFoundException("Family not found")
-
-//     return await this.familyRepository.update(id, updateFamilyDto);
-//   }
-
-
-//   async remove(id: number) {
-//     const category = await this.familyRepository.findOne({
-//       where: {id}
-//     })
-
-//     if (!category) throw new NotFoundException("Family not found")
-      
-//     return await this.familyRepository.delete(id)
-//   }
-
-// }
+  

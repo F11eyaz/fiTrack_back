@@ -5,6 +5,9 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth-guard';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/roles/roles.decorator';
+import { Role } from 'src/auth/roles/role.enum';
 
 @ApiTags("categories")
 @Controller('categories')
@@ -13,37 +16,43 @@ export class CategoryController {
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
   @UsePipes(new ValidationPipe)
   create(@Body() createCategoryDto: CreateCategoryDto, @Req() req ) {
-    return this.categoryService.create(createCategoryDto, req.user.id);
+    return this.categoryService.create(createCategoryDto, req.user.familyId);
   }
 
   @Get()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
   findAll(@Req() req) {
-    return this.categoryService.findAll(req.user.id);
+    console.log(req.user.familyId)
+    return this.categoryService.findAll(req.user.familyId);
   }
 
   @Get(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
+  findOne(@Param('id') id: number) {
     return this.categoryService.findOne(+id);
   }
 
   @Patch(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  update(@Param('id') id:string, @Body() updateCategoryDto: UpdateCategoryDto) {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
+  update(@Param('id') id:number, @Body() updateCategoryDto: UpdateCategoryDto) {
     return this.categoryService.update(+id, updateCategoryDto);
   }
 
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  remove(@Param('id') id: string) {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
+  remove(@Param('id') id: number) {
     return this.categoryService.remove(+id);
   }
 }

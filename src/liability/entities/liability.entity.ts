@@ -1,5 +1,6 @@
 import { User } from 'src/user/entities/user.entity'
 import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn} from 'typeorm'
+import { Family } from 'src/family/entities/family.entity'
 
 @Entity()
 export class Liability {
@@ -12,9 +13,12 @@ export class Liability {
     @Column()
     amount:number
 
-    @ManyToOne(() => User, (user) => user.liability)
-    @JoinColumn({name:'user_id'})
-    user:User
+    @ManyToOne(() => Family, (family) => family.categories)
+    family: Family;
+
+    // @ManyToOne(() => User, (user) => user.liability)
+    // @JoinColumn({name:'user_id'})
+    // user:User
 
     @CreateDateColumn()
     createdAt: Date

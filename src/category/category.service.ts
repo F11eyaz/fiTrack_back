@@ -14,14 +14,14 @@ export class CategoryService {
 
   async create(createCategoryDto: CreateCategoryDto, id: number) {
     const isExist = await this.categoryRepository.findBy({
-      user: {id},
+      family: {id},
       title: createCategoryDto.title
     })
     if(isExist.length) throw new BadRequestException("This category already exists")
 
       const newCategory = {
         title: createCategoryDto.title,
-        user: {
+        family: {
           id,
         },  
       }
@@ -32,7 +32,7 @@ export class CategoryService {
   async findAll(id: number) {
     return await this.categoryRepository.find({
       where: {
-        user: {id}
+        family: {id}
       },
       // relations: {
       //   transactions: true,
@@ -44,7 +44,7 @@ export class CategoryService {
     const category = await this.categoryRepository.findOne({
       where:{id},
       relations: {
-        user:true
+        family:true
       },
     })
     if (!category) throw new NotFoundException("Category not found")

@@ -38,7 +38,7 @@ export class TransactionService {
       action: createTransactionDto.action,
       cashAfter: newCashAfter,
       category: createTransactionDto.category,
-      user: { id },
+      family: { id },
     };
   
     return await this.transactionRepository.save(newTransaction);
@@ -47,7 +47,7 @@ export class TransactionService {
 
   findAll(id: number) {
     return this.transactionRepository.find({where: 
-      {user: {id}},
+      {family: {id}},
       order:{createdAt: 'DESC'}
     },
   );
@@ -58,7 +58,7 @@ export class TransactionService {
     const totalExpenses = await this.transactionRepository
     .createQueryBuilder('transaction')
     .select('SUM(-transaction.amount)', 'sum') // -transaction.amount чтобы перевести их в положительное число
-    .where("transaction.action = '-' AND transaction.user.id = :id", {id})
+    .where("transaction.action = '-' AND transaction.family.id = :id", {id})
     .getRawOne()
 
     const totalExpensesForCategory = await this.transactionRepository
@@ -68,7 +68,7 @@ export class TransactionService {
     .addSelect("ROUND(SUM(-transaction.amount) * 100.0 / :totalExpenses)", "percentage")
     .groupBy('transaction.category')
     .orderBy('sum', 'DESC')
-    .where("transaction.user.id = :id AND transaction.action = '-' ", {id, totalExpenses: totalExpenses.sum})
+    .where("transaction.family.id = :id AND transaction.action = '-' ", {id, totalExpenses: totalExpenses.sum})
     .take(5)
     .getRawMany()
 
@@ -88,7 +88,7 @@ export class TransactionService {
   
     query
       .where('transaction.createdAt >= :start AND transaction.createdAt < :end')
-      .andWhere('transaction.user.id = :id')
+      .andWhere('transaction.family.id = :id')
       .setParameters({ start, end, id });
   
     return query.getMany();
@@ -98,7 +98,7 @@ export class TransactionService {
   async findCash(id: number) {
     const latestTransaction = await this.transactionRepository.findOne({
       order: { id: 'DESC' },
-      where: {user:{id}},
+      where: {family:{id}},
     });
     if(latestTransaction){
       return latestTransaction.cashAfter

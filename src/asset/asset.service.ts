@@ -20,7 +20,7 @@ export class AssetService {
     const newAsset = {
       title: createAssetDto.title,
       amount:createAssetDto.amount,
-      user:{
+      family:{
         id,
       },
       createdAt: new Date(),
@@ -30,8 +30,9 @@ export class AssetService {
   }
 
   async findAll(id:number) {
+  
     return await this.assetRepository.find({where:{
-      user:{id},
+      family:{id},
     },
       order:{updatedAt: 'DESC'}
   })
@@ -42,7 +43,7 @@ export class AssetService {
     const totalAssets = await this.assetRepository
       .createQueryBuilder('asset')
       .select('SUM(asset.amount)', 'sum')
-      .where('asset.user.id = :id', { id })
+      .where('asset.family.id = :id', { id })
       .getRawOne();
     return totalAssets.sum;
   }

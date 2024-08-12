@@ -20,7 +20,7 @@ export class LiabilityService {
     const newLiability = {
       title: createLiabilityDto.title,
       amount:createLiabilityDto.amount,
-      user:{
+      family:{
         id,
       },
       createdAt: new Date(),
@@ -31,7 +31,7 @@ export class LiabilityService {
 
   async findAll(id:number) {
     return await this.liabilityRepository.find({where:{
-      user:{id}
+      family:{id}
     },
     order:{updatedAt: 'DESC'}
   })
@@ -41,7 +41,7 @@ export class LiabilityService {
     const totalLiabilities = await this.liabilityRepository
       .createQueryBuilder('liability')
       .select('SUM(liability.amount)', 'sum')
-      .where('liability.user.id = :id', { id })
+      .where('liability.family.id = :id', { id })
       .getRawOne();
     return totalLiabilities.sum
   }

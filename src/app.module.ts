@@ -8,9 +8,21 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AssetModule } from './asset/asset.module';
 import { LiabilityModule } from './liability/liability.module';
 // import { FamilyModule } from './family/family.module';
+import { FamilyModule } from './family/family.module';
+import { MailerModule } from '@nestjs-modules/mailer';
+
 
 @Module({
   imports: [
+    MailerModule.forRoot({
+      transport:{
+        host:'smtp.gmail.com',
+        auth: {
+          user: 'dumanb228@gmail.com',
+          pass:'ngdr vymd xqgo ysyk'
+        }
+      }
+    }),
     UserModule,
     CategoryModule,
     AuthModule,
@@ -26,6 +38,7 @@ import { LiabilityModule } from './liability/liability.module';
         password: configService.get("DB_PASSWORD"),
         database: configService.get("DB_NAME"),
         synchronize: true,
+        autoLoadEntities: true,
         entities: [__dirname + '/**/*.entity{.js, .ts}'],
       }),
       inject:[ConfigService], 
@@ -33,9 +46,15 @@ import { LiabilityModule } from './liability/liability.module';
     }),
     AssetModule,
     LiabilityModule,
-    // FamilyModule
+    FamilyModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RolesGuard
+    // },
+  
+  ],
 })
 export class AppModule {}
