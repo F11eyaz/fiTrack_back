@@ -7,10 +7,14 @@ import { Liability } from 'src/liability/entities/liability.entity';
 import { Asset } from 'src/asset/entities/asset.entity';
 import { LiabilityService } from 'src/liability/liability.service';
 import { AssetService } from 'src/asset/asset.service';
+import { UserService } from 'src/user/user.service';
+import { User } from 'src/user/entities/user.entity';
+import { FamilyService } from 'src/family/family.service';
+import { Family } from 'src/family/entities/family.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, Liability, Asset])],
+  imports: [TypeOrmModule.forFeature([Transaction, Liability, Asset, User, Family])],
   controllers: [TransactionController],
-  providers: [TransactionService, LiabilityService, AssetService],
+  providers: [TransactionService, LiabilityService, AssetService, UserService,  FamilyService ],
 })
 export class TransactionModule {}

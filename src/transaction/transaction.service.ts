@@ -5,6 +5,10 @@ import { Transaction } from './entities/transaction.entity';
 import { Repository } from 'typeorm';
 import { AssetService } from 'src/asset/asset.service';
 import { LiabilityService } from 'src/liability/liability.service';
+import { UserService } from 'src/user/user.service';
+import { User } from 'src/user/entities/user.entity';
+import { CashTransferDto } from './dto/cash-transfer.dto';
+import { AdminCashTransferDto } from './dto/admin-cash-transfer.dto';
 
 @Injectable()
 export class TransactionService {
@@ -12,43 +16,90 @@ export class TransactionService {
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     
-    private readonly assetService: AssetService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
+    private readonly assetService: AssetService,
     private readonly liabilityService: LiabilityService,
+    private readonly userService: UserService,
   ){}
 
-  async create(createTransactionDto: CreateTransactionDto, id: number) {
-    const latestCash = await this.findCash(+id)
+  async create(createTransactionDto: CreateTransactionDto, familyId: number, userId: number) {
+    const user = await this.userService.findOneById(userId)
 
     const adjustedAmount = createTransactionDto.action === '-' ? -createTransactionDto.amount : createTransactionDto.amount;
     
-  
-    // Calculate the new cashAfter
     let newCashAfter: number;
   
-      if (latestCash + adjustedAmount >= 0) {
-        newCashAfter = latestCash + adjustedAmount;
+      if (user.cash + adjustedAmount >= 0) {
+        newCashAfter = user.cash + adjustedAmount;
+        user.cash += adjustedAmount
       } else {
         throw new BadRequestException("Недостаточно средств");
       }
     
-  
     const newTransaction = {
       amount: adjustedAmount,
       action: createTransactionDto.action,
       cashAfter: newCashAfter,
       category: createTransactionDto.category,
-      family: { id },
+      family: { id: familyId },
+      user: {id: userId},
     };
-  
-    return await this.transactionRepository.save(newTransaction);
-  }
-  
 
-  findAll(id: number) {
+    
+    await this.userRepository.save(user)
+    return await this.transactionRepository.save(newTransaction);
+
+  }
+
+  async transfer(cashTransferDto: CashTransferDto, fromId: number, toId: number) {
+    const fromUser = await this.userService.findOneById(fromId)
+    const toUser = await this.userService.findOneById(toId)
+
+    if (fromUser.cash < cashTransferDto.amount) {
+      throw new BadRequestException("Недостаточно средств для перевода");
+    }
+    fromUser.cash -= cashTransferDto.amount
+    toUser.cash += cashTransferDto.amount
+
+    await this.userRepository.manager.transaction(async (transactionalEntityManager) => {
+      await transactionalEntityManager.save(fromUser);
+      await transactionalEntityManager.save(toUser);
+  });
+  }
+
+  async adminTransfer(adminCashTransferDto: AdminCashTransferDto) {
+    const fromUser = await this.userService.findOne(adminCashTransferDto.from)
+    const toUser = await this.userService.findOne(adminCashTransferDto.to)
+
+    if (fromUser.cash < adminCashTransferDto.amount) {
+      throw new BadRequestException("Недостаточно средств для перевода");
+    }
+    fromUser.cash -= adminCashTransferDto.amount
+    toUser.cash += adminCashTransferDto.amount
+
+    await this.userRepository.manager.transaction(async (transactionalEntityManager) => {
+      await transactionalEntityManager.save(fromUser);
+      await transactionalEntityManager.save(toUser);
+  });
+  }
+
+
+  findAll(familyId: number) {
     return this.transactionRepository.find({where: 
-      {family: {id}},
-      order:{createdAt: 'DESC'}
+      {family: {id: familyId}},
+      order:{createdAt: 'DESC'},
+      relations:['user'],
+      select: {
+        id: true, 
+        amount: true, 
+        category: true,
+        createdAt: true, 
+        user: {
+          email: true, 
+        },
+      },
     },
   );
   }
@@ -93,29 +144,27 @@ export class TransactionService {
   
     return query.getMany();
   }
-  
 
-  async findCash(id: number) {
-    const latestTransaction = await this.transactionRepository.findOne({
-      order: { id: 'DESC' },
-      where: {family:{id}},
-    });
-    if(latestTransaction){
-      return latestTransaction.cashAfter
-    }else{
-      return 0
-    }
+  async findUserCash(userId: number) {
+    const user = await this.userService.findOneById(userId)
+    return user.cash;
   }
 
-  async calculateFinancialStatus(id: number) {
+  async findTotalCash(familyId: number) {
+    const allUsers = await this.userRepository.find({where: {family: {id: familyId}}})
+    const totalCash = allUsers.reduce((total, user) => total + user.cash, 0 )
+    return totalCash;
+  }
+
+  async calculateFinancialStatus(familyId: number) {
     
-    const cash = await this.findCash(id);
+    const cash = await this.findTotalCash(familyId);
   
    
-    const totalAssetsSum = await this.assetService.findTotalSum(id)
+    const totalAssetsSum = await this.assetService.findTotalSum(familyId)
   
   
-    const totalLiabilitiesSum = await this.liabilityService.findTotalSum(id)
+    const totalLiabilitiesSum = await this.liabilityService.findTotalSum(familyId)
   
     
     const financialStatus = cash + (+totalAssetsSum || 0) - (+totalLiabilitiesSum || 0);

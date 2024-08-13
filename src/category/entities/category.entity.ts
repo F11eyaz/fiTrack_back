@@ -14,13 +14,6 @@ export class Category {
     @ManyToOne(() => Family, (family) => family.categories)
     family: Family;
 
-    // @ManyToOne(()=> User, (user)=>user.categories)
-    // @JoinColumn({name:'user_id'})
-    // user: User
-
-    // @OneToMany(()=> Transaction, (transaction)=> transaction.category)
-    // transactions: Transaction[]
-
     @CreateDateColumn()
     createdAt: Date
 

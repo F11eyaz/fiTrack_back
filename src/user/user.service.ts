@@ -8,14 +8,11 @@ import { JwtService } from '@nestjs/jwt';
 import { FamilyService } from 'src/family/family.service';
 import { Role } from 'src/auth/roles/role.enum';
 import { MailerService } from '@nestjs-modules/mailer';
-
 @Injectable()
 export class UserService {
 
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    private readonly jwtService: JwtService,
-
     private readonly familyService: FamilyService,
     private readonly mailerService: MailerService,
 
@@ -48,12 +45,14 @@ export class UserService {
     // Пример преобразования ролей в массив
     const roles: Role[] = [createUserDto.isMember ? Role.User : Role.Admin];
 
-
+    
     // Создаем пользователя
     const user = await this.userRepository.save({
         email: createUserDto.email,
         password: await argon2.hash(createUserDto.password),
+        cash: 0,
         roles: roles,
+
     });
 
     // Создаем семью и связываем ее с пользователем
@@ -65,22 +64,20 @@ export class UserService {
     }else{
       console.log(user.id)
       const family = await this.familyService.connectToFamily(user.id, createUserDto.token, );
-      user.family = family;
+      user.family = family; 
       await this.userRepository.save(user);
     }    
     await this.userRepository.save(user);
-    // const token = this.jwtService.sign({email: createUserDto.email,  }); // возможно здесь ошибка с ролями 
+    
     return { user };
 }
 
 
   async findOne(email: any) {
-    console.log(email)
     const user = await this.userRepository.findOne({
       where: {email},
       relations: ['family'], 
     });
-    console.log(user)
     return user
   }
 
@@ -93,6 +90,13 @@ export class UserService {
 
   async findAll(){
     return await this.userRepository.find()
+  }
+
+  async findFamilyUsers(familyId: number){
+    return await this.userRepository.find({
+      where: { family: { id: familyId } },
+      order: { createdAt: 'ASC',},
+    });
   }
 
   async changePassword(oldPassword: string, newPassword: string, id: number ) {

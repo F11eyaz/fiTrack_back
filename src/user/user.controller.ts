@@ -22,11 +22,30 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @Get('currentUser')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
+  findCurrentUser(@Req() req) {
+    return this.userService.findOneById(req.user.id);
+  }
+
   @Get()
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
   findAll() {
     return this.userService.findAll();
+  }
+  
+
+  @Get('familyUsers')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
+  findFamilyUsers(@Req() req) {
+    console.log(req.user)
+    return this.userService.findFamilyUsers(req.user.familyId);
   }
 
   @ApiBearerAuth()

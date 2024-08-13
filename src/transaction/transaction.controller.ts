@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseGuards, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseGuards, Req, Query, Param } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth-guard';
@@ -7,6 +7,8 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/roles/roles.decorator';
 import { Role } from 'src/auth/roles/role.enum';
+import { CashTransferDto } from './dto/cash-transfer.dto';
+import { AdminCashTransferDto } from './dto/admin-cash-transfer.dto';
 
 
 @ApiTags("transaction")
@@ -20,7 +22,27 @@ export class TransactionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin, Role.User)
   create(@Body() createTransactionDto: CreateTransactionDto, @Req() req) {
-    return this.transactionService.create(createTransactionDto, req.user.familyId);
+    return this.transactionService.create(createTransactionDto, req.user.familyId, req.user.id);
+  }
+
+  @Post('transfer/:id')
+  @ApiBearerAuth()
+  @UsePipes(new ValidationPipe())
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
+  transfer(@Param('id') toId: string, @Body() cashTransferDto: CashTransferDto, @Req() req ) {
+    console.log(cashTransferDto.amount)
+    return this.transactionService.transfer(cashTransferDto, req.user.id, +toId);
+  }
+
+  @Post('adminTransfer')
+  @ApiBearerAuth()
+  @UsePipes(new ValidationPipe())
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  adminTransfer(@Body() adminCashTransferDto: AdminCashTransferDto ) {
+    console.log(adminCashTransferDto.amount)
+    return this.transactionService.adminTransfer(adminCashTransferDto);
   }
 
   @Get()
@@ -60,8 +82,17 @@ export class TransactionController {
   @UsePipes(new ValidationPipe())
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin, Role.User)
-  findCash(@Req() req) {
-    return this.transactionService.findCash(+req.user.familyId);
+  findTotalCash(@Req() req) {
+    return this.transactionService.findTotalCash(+req.user.familyId);
+  }
+
+  @Get('userCash')
+  @ApiBearerAuth()
+  @UsePipes(new ValidationPipe())
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
+  findUserCash(@Req() req) {
+    return this.transactionService.findUserCash(+req.user.id);
   }
 
   @Get('financialStatus')

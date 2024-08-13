@@ -9,7 +9,7 @@ export class Asset {
     @Column()
     title:string
 
-    @Column()
+    @Column({ type: 'float' })
     amount:number
 
     @ManyToOne(() => Family, (family) => family.asset)
