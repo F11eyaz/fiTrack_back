@@ -70,12 +70,19 @@ export class TransactionService {
   }
 
   async adminTransfer(adminCashTransferDto: AdminCashTransferDto) {
+    
+    if (adminCashTransferDto.from === adminCashTransferDto.to) {
+      throw new BadRequestException("Вы не можете сделать перевод на тот же аккаунт");
+    }
+
     const fromUser = await this.userService.findOne(adminCashTransferDto.from)
     const toUser = await this.userService.findOne(adminCashTransferDto.to)
 
     if (fromUser.cash < adminCashTransferDto.amount) {
       throw new BadRequestException("Недостаточно средств для перевода");
     }
+
+
     fromUser.cash -= adminCashTransferDto.amount
     toUser.cash += adminCashTransferDto.amount
 
