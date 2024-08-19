@@ -1,15 +1,22 @@
-import {BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { UserService } from 'src/user/user.service';
 import * as argon2 from 'argon2'
 import { JwtService } from '@nestjs/jwt';
 import { v4 as uuidv4 } from 'uuid';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { ResetToken } from './entities/reset-token.entity';
 
 
 @Injectable()
 export class AuthService {
   constructor(
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(ResetToken) private readonly tokenRepository: Repository<ResetToken>,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
@@ -25,14 +32,30 @@ export class AuthService {
   } 
   
   async login(user: any) {
-    const payload = { id: user.id, email: user.email, familyId: user.family.id, roles: user.roles };
-    return {
-      token: this.jwtService.sign(payload),
-    };
+    if(user.isVerified){
+      const payload = { id: user.id, email: user.email, familyId: user.family.id, roles: user.roles, isVerified: user.isVerified };
+      return {
+        token: this.jwtService.sign(payload),
+      };
+    }else{
+      throw new ForbiddenException("Пользователь не верифицирован")
+    }
   }
 
+  async verifyUser(email: string) {
+    console.log(email)
+    const user = await this.userService.findOne(email);
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    user.isVerified = true;
+    await this.userService.update(user);
+  }
+
+
   async sendResetToken(email: string, resetToken: string) {
-    const resetLink = `http://localhost:4000/reset-password?resetToken=${resetToken}&email:${email}`
+    const resetLink = `http://localhost:3000/reset-password?resetToken=${resetToken}&email=${email}`
     await this.mailerService.sendMail({
       to: email,
       from: 'dumanb228@gmail.com',
@@ -43,28 +66,50 @@ export class AuthService {
 
 
   async forgotPassword(email: string) {
-    console.log(email)
     const user = await this.userService.findOne(email)
     console.log(user)
     if (!user){
       throw new BadRequestException("Такого пользователя не существует")
     }
 
-    const resetToken = uuidv4()
     const expiryDate = new Date();
     expiryDate.setHours(expiryDate.getHours() + 1)
-
-    this.sendResetToken(email, resetToken)
+    const resetToken = this.tokenRepository.create({
+      expiresAt: expiryDate,
+      userEmail: user.email,
+      resetToken: uuidv4()
+    });
+    await this.tokenRepository.save(resetToken);
+    this.sendResetToken(email, resetToken.resetToken)
 
     return {message: "Отправлено письмо на почту"}
 
   }
 
-  async resetPassword(email: string, newPassword: string){
-    const user = await this.userService.findOne(email)
-    const hashedNewPassword = await argon2.hash(newPassword);
-    await this.userService.changePassword( user.password, hashedNewPassword, user.id,)
-    return {message: "Пароль успешно изменен"}
+  async resetPassword(resetPasswordDto: ResetPasswordDto){
+    try{
+      const validToken = await this.tokenRepository.findOne({
+        where: {
+          resetToken: resetPasswordDto.resetToken,
+        },
+      });
+
+      
+      if(validToken){
+        const user = await this.userService.findOne(resetPasswordDto.email)
+        const hashedNewPassword = await argon2.hash(resetPasswordDto.newPassword);
+        user.password = hashedNewPassword
+        await this.userRepository.save(user)
+        await this.tokenRepository.delete(validToken.id);
+
+        return {message: "Пароль успешно изменен"}
+      }else{
+        throw new BadRequestException("Неправильный токен")
+      }
+    }catch(e){
+      console.log(e)
+      throw new BadRequestException("Неправильный токен")
+    }
   }
   
   

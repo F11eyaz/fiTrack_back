@@ -7,11 +7,15 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { ResetToken } from './entities/reset-token.entity';
 
 
 @Module({
   imports: [
     UserModule,
+    TypeOrmModule.forFeature([User, ResetToken]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -1,15 +1,24 @@
-import { Controller, Post, UseGuards, Req, Body } from '@nestjs/common';
+import { Controller, Post, UseGuards, Req, Body, Get, Query, BadRequestException } from '@nestjs/common';
 import { ApiTags,ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';;
 import { LocalAuthGuard } from './guards/local-auth-guard';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ValidationPipe } from '@nestjs/common';
+import { UsePipes } from '@nestjs/common';
+import * as jwt from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 
 
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService
+
+  ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post("login")
@@ -18,15 +27,29 @@ export class AuthController {
     return this.authService.login(req.user)
   }  
 
+   @Get('verify-email')
+  async verifyEmail(@Query('token') token: string) {
+    console.log(token)
+    try {
+      const decoded = this.jwtService.verify(token);
+      console.log('ff')
+      await this.authService.verifyUser(decoded.email);
+      return { message: 'Email успешно подтвержден' };
+    } catch (error) {
+      throw new BadRequestException('Неправильный или просроченный токен');
+    }
+  }
 
   @Post("forgot-password")
   async forgotPassword (@Body() email: any){
     return this.authService.forgotPassword(email.email)
   }  
 
+
+  @UsePipes(new ValidationPipe())
   @Post("reset-password")
-  async resetPassword (@Body() email: any, newPassword: any){
-    return this.authService.resetPassword(email.email, newPassword.newPassword)
+  async resetPassword (@Body() resetPasswordDto: ResetPasswordDto){
+    return this.authService.resetPassword(resetPasswordDto)
   } 
   
 }

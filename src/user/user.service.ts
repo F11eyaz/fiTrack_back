@@ -1,13 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { InjectRepository} from '@nestjs/typeorm';
-import {Repository} from 'typeorm'
+import { Repository, LessThan } from 'typeorm'
 import { User } from './entities/user.entity';
 import * as argon2 from "argon2"
-import { JwtService } from '@nestjs/jwt';
 import { FamilyService } from 'src/family/family.service';
 import { Role } from 'src/auth/roles/role.enum';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
+import * as jwt from 'jsonwebtoken';
+import * as cron from 'node-cron';
+
+
 @Injectable()
 export class UserService {
 
@@ -15,20 +19,63 @@ export class UserService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly familyService: FamilyService,
     private readonly mailerService: MailerService,
+    private readonly configService: ConfigService
 
   ){
-
+    this.scheduleCleanup();
   }
+
+  //Логику для удаления неподтвержденных пользователей
+  private scheduleCleanup() {
+    // Запуск задачи каждый день в полночь
+    cron.schedule('0 0 * * *', () => this.removeUnverifiedUsers());
+  }
+
+  private async removeUnverifiedUsers() {
+    try {
+      const result = await this.userRepository.delete({
+        isVerified: false,
+        createdAt: LessThan(new Date(Date.now() - 24 * 60 * 60 * 1000)), // 1 день назад
+      });
+
+      console.log(`Удалено неподтвержденных аккаунтов: ${result.affected}`);
+    } catch (error) {
+      console.error('Ошибка при удалении неподтвержденных аккаунтов:', error);
+    }
+  }
+
 
   async sendToken(email: any, token: any) {
     await this.mailerService.sendMail({
       to: email,
-      from: 'dumanb228@gmail.com',
+      from: this.configService.get('MAIL_USER'),
       subject: 'Ваш токен',
       text: `Ваш токен: ${token}, сохраните его.`,
       html: `<b>Ваш токен:</b> ${token}`,
     });
   }
+
+  async sendVerificationEmail(email: any, token: any) {
+
+    const url = `http://127.0.0.1:3000/verify-email?token=${token}`;
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Подтвердите вашу почту',
+      template: 'verification',
+      context: {
+        url,
+      },
+      text: `Перейдите по ссылке для подтверждения: ${url}`,
+      html: `<b>Перейдите по ссылке для подтверждения:</b> ${url}`,
+    });
+  }
+
+  async generateVerificationToken(email: string): Promise<string> {
+    const payload = { email };
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+  }
+
   
 
   async create(createUserDto: CreateUserDto) {
@@ -47,7 +94,7 @@ export class UserService {
 
     
     // Создаем пользователя
-    const user = await this.userRepository.save({
+    const user = this.userRepository.create({
         email: createUserDto.email,
         password: await argon2.hash(createUserDto.password),
         cash: 0,
@@ -56,20 +103,27 @@ export class UserService {
     });
 
     // Создаем семью и связываем ее с пользователем
-    if(!createUserDto.isMember){
+    if(!createUserDto.isMember ){
       const family = await this.familyService.create(user.id);
       user.family = family;
       this.sendToken(user.email, user.family.token)
       await this.userRepository.save(user);
+
     }else{
-      console.log(user.id)
-      const family = await this.familyService.connectToFamily(user.id, createUserDto.token, );
-      user.family = family; 
-      await this.userRepository.save(user);
-    }    
-    await this.userRepository.save(user);
+      const validToken = await this.familyService.findFamilyByToken(createUserDto.token)
+      if(validToken){
+        const family = await this.familyService.connectToFamily(user.id, createUserDto.token, );
+        console.log(family)
+        user.family = family; 
+        await this.userRepository.save(user);
+      }else{
+        throw new BadRequestException("Неправильный токен семьи")
+      }
+
+    }  
+    const verificationToken = await this.generateVerificationToken(user.email)
+    this.sendVerificationEmail(user.email, verificationToken )
     
-    return { user };
 }
 
 
@@ -110,5 +164,12 @@ export class UserService {
     await this.userRepository.save(user)
     return user
   }
+
+  async update(user: User){
+    await this.userRepository.save(user); 
+  }
+
+
+
   
 }

@@ -1,5 +1,5 @@
 
-import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, OneToOne, JoinColumn} from "typeorm"
+import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, } from "typeorm"
 import { Family } from "src/family/entities/family.entity"
 import { Role } from "src/auth/roles/role.enum"
 import { Transaction } from "src/transaction/entities/transaction.entity"
@@ -30,10 +30,13 @@ export class User {
     @ManyToOne(()=> Family, family => family.users)
     family: Family
 
-    @CreateDateColumn()
+    @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date
 
     @UpdateDateColumn()
     updatedAt: Date
+
+    @Column({ default: false })
+    isVerified: boolean;
 }
  

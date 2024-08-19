@@ -13,10 +13,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   app.enableCors();
-  // app.setGlobalPrefix('app') - создает глобальный префикс для всех маршрутов:
-  // например /app/profile
-  // вместо /profile
-  // app.useGlobalPipes() - добавить глобальные пайпы
+  
   await app.listen(3003);
 
 }

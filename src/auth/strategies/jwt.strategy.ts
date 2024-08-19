@@ -21,6 +21,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // Возвращаем объект пользователя, который будет доступен в request.user
 
-    return { id: payload.id, email: payload.email, familyId: payload.familyId, roles: payload.roles }; // если тут нет familyId то показываться будут все экземпляры всех сущностей потому что familyId - undefined 
+    return { id: payload.id, email: payload.email, familyId: payload.familyId, roles: payload.roles, isVerified: payload.isVerified }; // если тут нет familyId то показываться будут все экземпляры всех сущностей потому что familyId - undefined 
     }
 }
