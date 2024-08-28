@@ -1,7 +1,7 @@
 import { IsEmail} from "class-validator"
 
 export class ForgotPasswordDto {
-    @IsEmail()
+    @IsEmail({}, {message:"Некорректный формат почты"})
     email: string
 
 }

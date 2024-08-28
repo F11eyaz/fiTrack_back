@@ -15,7 +15,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     
     if (result) {
       const user = request.user;
-      console.log(user)
       if (!user.isVerified) {
         throw new ForbiddenException('Пользователь не найден');
       }

@@ -102,10 +102,13 @@ export class TransactionService {
         id: true, 
         amount: true, 
         category: true,
+        cashAfter: true,
         createdAt: true, 
         user: {
+          fullName: true,
           email: true, 
         },
+
       },
     },
   );

@@ -1,11 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { CreateFamilyDto } from './dto/create-family.dto';
-import { UpdateFamilyDto } from './dto/update-family.dto';
+import { BadRequestException, Injectable} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Family } from './entities/family.entity';
 import { User } from 'src/user/entities/user.entity';
 import {Repository} from 'typeorm'
-import { error } from 'console';
 
 @Injectable()
 export class FamilyService {
@@ -51,6 +48,35 @@ export class FamilyService {
     await this.familyRepository.save(family);
     return family
     
+  }
+
+  async kickUser(familyId: number, userId: number): Promise<void> {
+    const family = await this.familyRepository.findOne({
+      where: { id: familyId },
+      relations: ['users'],
+    });
+
+    if (!family) {
+      throw new BadRequestException('Такой семьи не существует');
+    }
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new BadRequestException('Такого пользователя не существует');
+    }
+    if (!family.users.some(user => user.id == userId)) {
+      throw new BadRequestException('Пользователь не является членом этой семьи');
+    }
+
+    family.users = family.users.filter(user => user.id != userId);
+
+    await this.familyRepository.save(family);
+
+    // Тут крч user.id и userId - разные типы поэтому == а не ===
+  }
+
+  async remove(familyId: number){
+    await this.familyRepository.delete(familyId)
   }
 }
 

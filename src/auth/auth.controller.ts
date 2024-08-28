@@ -6,7 +6,6 @@ import { LocalAuthGuard } from './guards/local-auth-guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ValidationPipe } from '@nestjs/common';
 import { UsePipes } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
 import { JwtService } from '@nestjs/jwt';
 
 
@@ -29,10 +28,8 @@ export class AuthController {
 
    @Get('verify-email')
   async verifyEmail(@Query('token') token: string) {
-    console.log(token)
     try {
       const decoded = this.jwtService.verify(token);
-      console.log('ff')
       await this.authService.verifyUser(decoded.email);
       return { message: 'Email успешно подтвержден' };
     } catch (error) {

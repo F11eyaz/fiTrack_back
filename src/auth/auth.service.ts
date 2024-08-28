@@ -32,8 +32,12 @@ export class AuthService {
   } 
   
   async login(user: any) {
+    if (!user.family){
+      throw new ForbiddenException("Вы были исключены из семьи. Дождитесь пока вас добавят или создайте новый аккаунт")
+    }
+
     if(user.isVerified){
-      const payload = { id: user.id, email: user.email, familyId: user.family.id, roles: user.roles, isVerified: user.isVerified };
+      const payload = { id: user.id, fullName: user.fullName, email: user.email, familyId: user.family.id, roles: user.roles, isVerified: user.isVerified };
       return {
         token: this.jwtService.sign(payload),
       };
@@ -43,7 +47,6 @@ export class AuthService {
   }
 
   async verifyUser(email: string) {
-    console.log(email)
     const user = await this.userService.findOne(email);
     if (!user) {
       throw new Error('Пользователь не найден');
@@ -67,7 +70,6 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     const user = await this.userService.findOne(email)
-    console.log(user)
     if (!user){
       throw new BadRequestException("Такого пользователя не существует")
     }
@@ -107,7 +109,6 @@ export class AuthService {
         throw new BadRequestException("Неправильный токен")
       }
     }catch(e){
-      console.log(e)
       throw new BadRequestException("Неправильный токен")
     }
   }

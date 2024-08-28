@@ -4,9 +4,6 @@ import { UpdateLiabilityDto } from './dto/update-liability.dto';
 import { Liability } from './entities/liability.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {Repository} from 'typeorm'
-import { CreateCategoryDto } from 'src/category/dto/create-category.dto';
-import { error } from 'console';
-import { parse } from 'path';
 
 @Injectable()
 export class LiabilityService {
@@ -73,9 +70,13 @@ export class LiabilityService {
 
     if (!liability) {
         throw new NotFoundException('liability not found');
-    } 
-    const updatedBalance: number = liability.amount - amount; 
-    return await this.liabilityRepository.update(id, {amount: updatedBalance})
+    }
+    if(amount){
+      const updatedBalance: number = liability.amount - amount; 
+      return await this.liabilityRepository.update(id, {amount: updatedBalance})
+    }else{
+      throw new BadRequestException("Сумма не должна быть пустой")
+    }
 }
   
   async remove(id: number) {

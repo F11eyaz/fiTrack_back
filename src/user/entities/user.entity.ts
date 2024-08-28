@@ -9,6 +9,9 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number
 
+    @Column({default: 'No Name'})
+    fullName: string
+
     @Column()
     email: string
 

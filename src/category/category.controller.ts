@@ -28,7 +28,6 @@ export class CategoryController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin, Role.User)
   findAll(@Req() req) {
-    console.log(req.user.familyId)
     return this.categoryService.findAll(req.user.familyId);
   }
 

@@ -1,12 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { Asset } from './entities/asset.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {Repository} from 'typeorm'
-import { CreateCategoryDto } from 'src/category/dto/create-category.dto';
-import { error } from 'console';
-import { parse } from 'path';
 
 @Injectable()
 export class AssetService {

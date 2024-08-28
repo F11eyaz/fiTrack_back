@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateLiabilityDto } from './create-liability.dto';
 import { User } from "src/user/entities/user.entity"
-import { IsNumber, IsString , IsOptional} from "class-validator"
+import { IsNumber, IsString , IsOptional, Min} from "class-validator"
 
 export class UpdateLiabilityDto extends PartialType(CreateLiabilityDto) {
 
@@ -9,7 +9,8 @@ export class UpdateLiabilityDto extends PartialType(CreateLiabilityDto) {
     @IsOptional()
     title?:string
 
-    @IsNumber()
+    @IsNumber({}, {message: 'Значение должно быть числом'} )
+    @Min(0, { message: 'Значение должно быть положительным числом или нулём.' })
     @IsOptional()
     amount?:number
     

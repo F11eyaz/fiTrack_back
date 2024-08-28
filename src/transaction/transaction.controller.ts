@@ -41,7 +41,6 @@ export class TransactionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
   adminTransfer(@Body() adminCashTransferDto: AdminCashTransferDto ) {
-    console.log(adminCashTransferDto.amount)
     return this.transactionService.adminTransfer(adminCashTransferDto);
   }
 

@@ -9,10 +9,12 @@ import { AssetModule } from './asset/asset.module';
 import { LiabilityModule } from './liability/liability.module';
 import { FamilyModule } from './family/family.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
     }),

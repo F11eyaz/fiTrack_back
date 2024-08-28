@@ -1,4 +1,4 @@
-import { Controller,Post, Get, Body,ValidationPipe, Put, Req } from '@nestjs/common';
+import { Controller,Post, Get, Body,ValidationPipe, Put, Req, Patch, Delete } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsePipes } from '@nestjs/common';
@@ -9,6 +9,7 @@ import { UseGuards } from '@nestjs/common';
 import { Roles } from 'src/auth/roles/roles.decorator';
 import { Role } from 'src/auth/roles/role.enum';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdatePersonalDataDto } from './dto/update-personal-data.dto';
 
 
 @ApiTags("user")
@@ -44,9 +45,16 @@ export class UserController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin, Role.User)
   findFamilyUsers(@Req() req) {
-    console.log(req.user)
     return this.userService.findFamilyUsers(req.user.familyId);
   }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe())
+  @Patch("updatePersonalData")
+  async updatePersonalData(@Body() updatePersonalDataDto: UpdatePersonalDataDto, @Req() req){
+    return this.userService.updatePersonalData(updatePersonalDataDto, req.user.id)
+  } 
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -54,4 +62,11 @@ export class UserController {
   async changePassword(@Body() changePasswordDto: ChangePasswordDto, @Req() req){
     return this.userService.changePassword(changePasswordDto.oldPassword, changePasswordDto.newPassword, req.user.id)
   } 
+
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard)
+  // @Delete("deleteAccount")
+  // async deleteAccount(@Req() req){
+  //   return this.userService.deleteAccount(req.user.id)
+  // } 
 }
