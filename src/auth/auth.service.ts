@@ -58,7 +58,7 @@ export class AuthService {
 
 
   async sendResetToken(email: string, resetToken: string) {
-    const resetLink = `http://134.209.249.16:3000/reset-password?resetToken=${resetToken}&email=${email}`
+    const resetLink = `fiTrack.kz/reset-password?resetToken=${resetToken}&email=${email}`
     await this.mailerService.sendMail({
       to: email,
       from: 'dumanb228@gmail.com',

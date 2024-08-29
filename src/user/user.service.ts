@@ -73,7 +73,7 @@ export class UserService {
 
   async sendVerificationEmail(email: any, token: any) {
 
-    const url = `http://134.209.249.16:3000/verify-email?token=${token}`;
+    const url = `fiTrack.kz/verify-email?token=${token}`;
 
     await this.mailerService.sendMail({
       to: email,
