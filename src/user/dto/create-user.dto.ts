@@ -1,8 +1,10 @@
 import { IsEmail,IsString,Length,Matches,MinLength } from "class-validator"
+import { Transform } from "class-transformer";
 
 
 export class CreateUserDto {
     @IsEmail({}, {message:"Некорректный формат почты"})
+    @Transform(({ value }) => value.toLowerCase()) 
     email: string
 
     @IsString({ message: 'Полное имя должно быть строкой' })

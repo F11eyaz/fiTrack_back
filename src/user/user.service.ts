@@ -95,10 +95,11 @@ export class UserService {
   
 
   async create(createUserDto: CreateUserDto) {
+    const email = createUserDto.email.toLowerCase(); // переводим почту в lowercase 
     // Проверяем, существует ли пользователь с таким email
     const existUser = await this.userRepository.findOne({
         where: {
-            email: createUserDto.email  
+            email 
         }
     });
 
@@ -112,7 +113,7 @@ export class UserService {
     // Создаем пользователя
     const user = await this.userRepository.save({
         fullName: createUserDto.fullName,
-        email: createUserDto.email,
+        email: email,
         password: await argon2.hash(createUserDto.password),
         cash: 0,
         roles: roles,
