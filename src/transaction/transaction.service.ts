@@ -2,13 +2,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transaction } from './entities/transaction.entity';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { AssetService } from 'src/asset/asset.service';
 import { LiabilityService } from 'src/liability/liability.service';
 import { UserService } from 'src/user/user.service';
 import { User } from 'src/user/entities/user.entity';
 import { CashTransferDto } from './dto/cash-transfer.dto';
 import { AdminCashTransferDto } from './dto/admin-cash-transfer.dto';
+import { subDays } from 'date-fns';
 
 @Injectable()
 export class TransactionService {
@@ -93,25 +94,32 @@ export class TransactionService {
   }
 
 
-  findAll(familyId: number) {
-    return this.transactionRepository.find({where: 
-      {family: {id: familyId}},
-      order:{createdAt: 'DESC'},
-      relations:['user'],
+  findAll(familyId: number, period?: '7' | '30' | '90' | '365') {
+    const where: any = {
+      family: { id: familyId },
+    };
+  
+    if (period) {
+      const fromDate = subDays(new Date(), parseInt(period));
+      where.createdAt = MoreThanOrEqual(fromDate);
+    }
+  
+    return this.transactionRepository.find({
+      where,
+      order: { createdAt: 'DESC' },
+      relations: ['user'],
       select: {
-        id: true, 
-        amount: true, 
+        id: true,
+        amount: true,
         category: true,
         cashAfter: true,
-        createdAt: true, 
+        createdAt: true,
         user: {
           fullName: true,
-          email: true, 
+          email: true,
         },
-
       },
-    },
-  );
+    });
   }
 
   async findExpensesStats(id: number) {

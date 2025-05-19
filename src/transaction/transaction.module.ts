@@ -16,5 +16,6 @@ import { Family } from 'src/family/entities/family.entity';
   imports: [TypeOrmModule.forFeature([Transaction, Liability, Asset, User, Family])],
   controllers: [TransactionController],
   providers: [TransactionService, LiabilityService, AssetService, UserService,  FamilyService ],
+  exports: [TransactionService]
 })
 export class TransactionModule {}

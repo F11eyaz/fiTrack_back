@@ -10,6 +10,7 @@ import { LiabilityModule } from './liability/liability.module';
 import { FamilyModule } from './family/family.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 
 @Module({
@@ -53,6 +54,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AssetModule,
     LiabilityModule,
     FamilyModule,
+    ChatbotModule,
   ],
   controllers: [],
   providers: [
